@@ -98,8 +98,7 @@ func SampleFingerprint(payload string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%w: canonicalize JSON payload: %v", ErrBadRequest, err)
 	}
-	_ = canonical
-	h := sha256.Sum256([]byte(payload))
+	h := sha256.Sum256(canonical)
 	return hex.EncodeToString(h[:]), nil
 }
 
