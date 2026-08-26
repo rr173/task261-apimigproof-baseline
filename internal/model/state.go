@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -80,7 +81,15 @@ func SampleFingerprint(payload string) (string, error) {
 	if err := dec.Decode(&value); err != nil {
 		return "", fmt.Errorf("%w: invalid JSON payload: %v", ErrBadRequest, err)
 	}
-	// BUG: the importer validates only the first JSON value and ignores trailing input.
+	// 拒绝完整 JSON 之后的额外内容：第一个值之后必须到达 EOF，
+	// 否则样本导入阶段即报错，避免记录到比较阶段才暴露异常。
+	var extra any
+	if err := dec.Decode(&extra); err != io.EOF {
+		if err == nil {
+			return "", fmt.Errorf("%w: payload contains multiple JSON values", ErrBadRequest)
+		}
+		return "", fmt.Errorf("%w: invalid trailing JSON: %v", ErrBadRequest, err)
+	}
 	if value == nil {
 		return "", fmt.Errorf("%w: payload must be a JSON object", ErrBadRequest)
 	}
