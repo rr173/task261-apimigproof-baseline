@@ -233,6 +233,13 @@ func newEffectiveValue(plan *transform.Plan, outRaw string, val semantics.Value,
 		}
 		return "ABSENT"
 	}
+	// 显式 null 的在场性与值需保持：旧侧 EffectiveValue 对显式 null
+	// 产出 "NULL"，新侧同样以 "NULL" 表达，从而与未设置（ABSENT）及
+	// 显式字符串值（"S:..."）区分。否则显式 null 经 keep/rename/coerce
+	// 后会被误报为字符串值 "null"，在新旧契约语义相同时误判为语义改变。
+	if val.Null {
+		return "NULL"
+	}
 	if outRaw == "" {
 		return "ABSENT"
 	}
